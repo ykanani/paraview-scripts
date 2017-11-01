@@ -6,6 +6,8 @@ import os
 from paraview.simple import *
 #### disable automatic camera reset on 'Show'
 paraview.simple._DisableFirstRenderCameraReset()
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
+print(os.getcwd())
 
 ##############################
 ############# 1.55/100000/0.711*38000/(15.8*(T1Mean-20))
