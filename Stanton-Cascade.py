@@ -49,7 +49,6 @@ disp = Show(Curves1, renderView1)
 
 
 #path1="/home/03624/ykanani/tempparaview/"
-path1='D:/PostProcess/pvout/'
 path2=".plt"
 
 
