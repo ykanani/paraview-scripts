@@ -7,8 +7,8 @@ from paraview.simple import *
 #### disable automatic camera reset on 'Show'
 paraview.simple._DisableFirstRenderCameraReset()
 print(os.getcwd())
-path1=np.genfromtxt("/home/03624/ykanani/Repositories/paraview-scripts/localOutputFolder",dtype='str')
-print(path1)
+#path1=np.genfromtxt("/home/03624/ykanani/Repositories/paraview-scripts/localOutputFolder",dtype='str')
+#print(path1)
 ##############################
 ############# 1.55/100000/0.711*38000/(15.8*(T1Mean-20))
 
@@ -47,12 +47,15 @@ Curves1.SliceType.Normal = [0, 0, 1]
 
 disp = Show(Curves1, renderView1)
 
-
-#path1="/home/03624/ykanani/tempparaview/"
+location =input("Please enter the location that you are running this script, 0:Office PC, 1:Marvericks :")
+if location==0:
+	path1="/home/03624/ykanani/tempparaview/"
+elif location==1:
+	path1='D:/PostProcess/pvout/'
 path2=".plt"
 
 
-path = path1 + caseName + "_St_" +str(zmin) + "to" +str(zmax) + "_n" + str(n)  + path2
+path = path1[0] + caseName + "_St_" +str(zmin) + "to" +str(zmax) + "_n" + str(n)  + path2
 fout = open(path,'a')
 #### uncomment the following to render all views
 # RenderAllViews()
