@@ -47,7 +47,7 @@ Curves1.SliceType.Normal = [0, 0, 1]
 
 disp = Show(Curves1, renderView1)
 
-location =input("Please enter the location that you are running this script, 0:Office PC, 1:Marvericks :")
+location =input("Please enter the location that you are running this script, 0:Marvericks,1:Office PC :")
 if location==0:
 	path1="/home/03624/ykanani/tempparaview/"
 elif location==1:
@@ -55,7 +55,7 @@ elif location==1:
 path2=".plt"
 
 
-path = path1[0] + caseName + "_St_" +str(zmin) + "to" +str(zmax) + "_n" + str(n)  + path2
+path = path1 + caseName + "_St_" +str(zmin) + "to" +str(zmax) + "_n" + str(n)  + path2
 fout = open(path,'a')
 #### uncomment the following to render all views
 # RenderAllViews()
