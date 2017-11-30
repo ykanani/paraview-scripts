@@ -47,11 +47,14 @@ Curves1.SliceType.Normal = [0, 0, 1]
 
 disp = Show(Curves1, renderView1)
 
-location =input("Please enter the location that you are running this script, 0:Marvericks,1:Office PC :")
+location =input("Please enter the location that you are running this script, 0:Marvericks,1:Office PC,2:BW :")
 if location==0:
 	path1="/home/03624/ykanani/tempparaview/"
 elif location==1:
 	path1='D:/PostProcess/pvout/'
+elif location==2:
+	path1='/u/sciteam/kanani/tempparaview/'
+
 path2=".plt"
 
 
