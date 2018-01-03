@@ -10,9 +10,9 @@ paraview.simple._DisableFirstRenderCameraReset()
 ##############################
 ############# 1.55/100000/0.711*38000/(15.8*(T1Mean-20))
 
-n= 500
-zmin=0.1
-zmax=0.154
+n= 100
+zmin=0.1#0.117
+zmax=0.154#0.137
 ##FOR 2D case
 #zmin=0.01
 #zmax=0.02
@@ -45,9 +45,14 @@ Curves1.SliceType.Normal = [0, 0, 1]
 
 disp = Show(Curves1, renderView1)
 
+location =input("Please enter the location that you are running this script, 0:Marvericks,1:Office PC,2:BW :")
+if location==0:
+	path1="/home/03624/ykanani/tempparaview/"
+elif location==1:
+	path1='D:/PostProcess/pvout/'
+elif location==2:
+	path1='/u/sciteam/kanani/tempparaview/'
 
-#path1="/home/03624/ykanani/tempparaview/"
-path1='D:/PostProcess/CN5-2/'
 path2=".plt"
 
 
@@ -72,15 +77,55 @@ for i in range(0,n):
     
 
     pdi = servermanager.Fetch(Curves1)
-    
-    #print pdi
-    #print pdi.GetBlock(0).GetPointData().GetArray("T1")
+    # print "1111111111111111111111111111111111111111111"
+    # print "###########################################"
+    # print "###########################################"
+    # print "###########################################"
+    # print "###########################################"
+                
+    # print pdi
+    # print "2222222222222222222222"
+    # print "###########################################"
+    # print "###########################################"
+    # print "###########################################"
+    # print "###########################################"
+    # print pdi.GetBlock(0)
+    # print "33333333333333333333333333333"
+    # print "###########################################"
+    # print "###########################################"
+    # print "###########################################"
+    # print "###########################################"
+    # print pdi.GetBlock(0).GetBlock(0)
+    # print "4444444444444444444444444444"
+    # print "###########################################"
+    # print "###########################################"
+    # print "###########################################"
+    # print "###########################################"
+    # print pdi.GetBlock(0).GetBlock(0).GetBlock(0)
+    # print "5555555555555555555555555555555"
+    # print "###########################################"
+    # print "###########################################"
+    # print "###########################################"
+    # print "###########################################"
+    # print pdi.GetBlock(0).GetBlock(0).GetBlock(0).GetBlock(0)
+    # print "666666666666666666666666666666666"
+    # print "###########################################"
+    # print "###########################################"
+    # print "###########################################"
+    # print "###########################################"
+    # print pdi.GetBlock(0).GetBlock(0).GetBlock(0).GetBlock(0).GetPointData()
+    # print "777777777777777777777777"
+    # print "###########################################"
+    # print "###########################################"
+    # print "###########################################"
+    # print "###########################################"
+    # print pdi.GetBlock(0).GetBlock(0).GetBlock(0).GetBlock(0).GetPointData().GetArray("T1Mean")
     #print pdi.GetBlock(0).GetBlock(0)
     #print pdi.GetBlock(0).GetBlock(0).GetBlock(0).GetPointData()
-    T1Mean = pdi.GetBlock(0).GetPointData().GetArray("T1Mean")  #T1 or T1Mean
-    T2Mean = pdi.GetBlock(0).GetPointData().GetArray("T2Mean") #T2 or T2Mean
-    pMean = pdi.GetBlock(0).GetPointData().GetArray("pMean")  #p or pMean
-    x = pdi.GetBlock(0).GetPointData().GetArray("arc_length")
+    T1Mean = pdi.GetBlock(0).GetBlock(0).GetBlock(0).GetBlock(0).GetPointData().GetArray("T1Mean")  #T1 or T1Mean
+    T2Mean = pdi.GetBlock(0).GetBlock(0).GetBlock(0).GetBlock(0).GetPointData().GetArray("T2Mean") #T2 or T2Mean
+    pMean = pdi.GetBlock(0).GetBlock(0).GetBlock(0).GetBlock(0).GetPointData().GetArray("pMean")  #p or pMean
+    x = pdi.GetBlock(0).GetBlock(0).GetBlock(0).GetBlock(0).GetPointData().GetArray("arc_length")
     print "here"
     m=T1Mean.GetNumberOfTuples()
     T=[]
@@ -107,23 +152,29 @@ avgT=[x/n for x in sT]
 avgP=[x/n for x in sP]
 
 dT = [x-20.0 for x in avgT]
-Pmax=max(avgP)
+Pmax=max([float(i) for i in avgP])
 #print "Pmax =" + str(max(avgP))
 pnon = [(Pmax-x)/(0.5*Uexit**2) for x in avgP]
 PmaxIndex= avgP.index(Pmax)
 print PmaxIndex
-arc1=arc[:PmaxIndex]
-
-arc2=arc[PmaxIndex:]
-arc2new = [x-arc[-1] for x in arc2]
-
-
-#arcNew=[x if x<0.72 else x-arc[-1] for x in arc] ##reconstructed case
-arcNew=[x-0.63 for x in arc] ##decomposed case
-arcNew=[x if x>-0.5 else x+arc[-1] for x in arcNew] ##reconstructed case
-
+print Pmax
+print arc[234]
+xshift=arc[PmaxIndex]
+print("Xshift =====================",xshift)
+#total length = 1.10812
+print arc[-1]
+#arcNew=[x-0.63 for x in arc] ##decomposed case
+arcNew=[x-xshift for x in arc]   #shift stagnation point to zero
+#print arc
+print arcNew[1], arcNew[-1]
+arcNew=[x if x<0.63 else x-arc[-1] for x in arcNew] #rearrange arc between -.46 and 0.6 ##reconstructed case
+print arcNew[1], arcNew[-1]
+arcNew=[x if x>-0.47812 else x+arc[-1] for x in arcNew] #rearrange arc between -.46 and 0.6 ##reconstructed case
+print arcNew[1], arcNew[-1]
 #print dT
 St = [alfa * gradT / (Uexit*x) for x in dT]
+
+
 #print St
 #print avgT
 #print arc

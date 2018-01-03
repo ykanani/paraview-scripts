@@ -17,7 +17,7 @@ l=np.insert(l,0,0)
 #print l
 nn = 2
 Smin=-.45
-Smax=0.1
+Smax=0.1#-.42#
 deltaS=0.01
 nS=(Smax-Smin)/deltaS+1
 SS=np.linspace(Smin,Smax,nS)
@@ -26,8 +26,8 @@ print SS
 ###############################################
 n= 50
 delta=0.02
-zmin=0.0117#0.117 #0.1
-zmax=0.0137#0.137 #0.154
+zmin=0.1#0.117 #0.1
+zmax=0.101#0.137 #0.154
 sp=zmax-zmin  #spanwise distance
 
 ###FOR 2D case
@@ -96,38 +96,10 @@ print source
 # get active view
 renderView1 = GetActiveViewOrCreate('RenderView')
 
-# create a new 'Slice'
-slice1 = Slice(Input=source)
-slice1.SliceType = 'Plane'
-slice1.SliceOffsetValues = [0.0]
-
-# init the 'Plane' selected for 'SliceType'
-slice1.SliceType.Origin = [xi, yi, 0]
-slice1.SliceType.Normal = [X2-X1,Y2-Y1, 0.0]
 
 
-
-
-# get active view
-renderView1 = GetActiveViewOrCreate('RenderView')
-
-clip1 = Clip(Input=slice1)
-clip1.ClipType = 'Plane'
-
-# init the 'Plane' selected for 'SliceType'
-if Sa>0:
-    clipy=yi-0.001*(X2-X1)/r
-    clipx=xi+0.001*(Y2-Y1)/r
-else:
-    clipy=yi+0.001*(X2-X1)/r
-    clipx=xi-0.001*(Y2-Y1)/r
-
-clip1.ClipType.Origin = [clipx, clipy, 0.127]
-clip1.ClipType.Normal = [-(Y2-Y1),(X2-X1),0]
-
-
-plotOverLine1 = PlotOverLine(Input=clip1,
-    Source='High Resolution Line Source')
+probe = ProbeLocation(Input=source,
+    ProbeType='Fixed Radius Point Source')
 #start = input("Please enter start: ")
 #end = input("Please enter end: ")
 #sp=0.031750
@@ -137,15 +109,16 @@ d = 0.1
 r=((Y2-Y1)**2+(X2-X1)**2)**0.5
 
 
-plotOverLine1.Source.Point1 = [xi-d*(Y2-Y1)/r, yi+d*(X2-X1)/r, zmin]
-plotOverLine1.Source.Point2 = [xi-d*(Y2-Y1)/r, yi+d*(X2-X1)/r, zmax]
+probe.ProbeType.Center  = [xi-d*(Y2-Y1)/r, yi+d*(X2-X1)/r, zmin]
 
-# Properties modified on plotOverLine1
-plotOverLine1.Tolerance = 2.22044604925031e-16
 
-# create a new 'Integrate Variables'
-integrateVariables1 = IntegrateVariables(Input=plotOverLine1)
 
+if Sa>0:
+    clipy=yi-0.001*(X2-X1)/r
+    clipx=xi+0.001*(Y2-Y1)/r
+else:
+    clipy=yi+0.001*(X2-X1)/r
+    clipx=xi-0.001*(Y2-Y1)/r
 #####################################surface
 
 # create a new 'Slice' on the surface
@@ -312,12 +285,7 @@ for dS in SS:
     ri = R1 + (Sa - S1)*(R2-R1)/(S2-S1)
     
     r=((Y2-Y1)**2+(X2-X1)**2)**0.5
-    # modify slice1
-    slice1.SliceType.Origin = [xi, yi, 0]
-    slice1.SliceType.Normal = [X2-X1,Y2-Y1, 0.0]
-    # modify slice 2
-    slice2.SliceType.Origin = [xi, yi, 0]
-    slice2.SliceType.Normal = [X2-X1,Y2-Y1, 0.0]
+    
     
     #    if Sa>0:
     clipy=yi-0.001*(X2-X1)/r
@@ -326,8 +294,6 @@ for dS in SS:
     #        clipy=yi+0.01*(X2-X1)/r
     #        clipx=xi-0.01*(Y2-Y1)/r
     
-    clip1.ClipType.Origin = [clipx, clipy, 0.127]
-    clip1.ClipType.Normal = [-(Y2-Y1),(X2-X1),0]
     
     clip4.ClipType.Origin = [clipx, clipy, 0.127]
     clip4.ClipType.Normal = [-(Y2-Y1),(X2-X1),0]
@@ -359,10 +325,10 @@ for dS in SS:
         #d=1e-6*(1-1.01**j)/(1-1.01)
         #print j
         #print "d = " +  str(d)
-        plotOverLine1.Source.Point1 = [xi-d*(Y2-Y1)/r, yi+d*(X2-X1)/r, zmin]
-        plotOverLine1.Source.Point2 = [xi-d*(Y2-Y1)/r, yi+d*(X2-X1)/r, zmax]
+        probe.ProbeType.Center  = [xi-d*(Y2-Y1)/r, yi+d*(X2-X1)/r, zmin]
         
-        pdi = servermanager.Fetch(integrateVariables1)
+        
+        pdi = servermanager.Fetch(probe)
         pdiS = servermanager.Fetch(integrateVariables2)
         #print pdi
         if j ==0 :
@@ -752,7 +718,7 @@ for dS in SS:
                     deltaT1W, deltaT2W, cf1, cf2, utau, ri, UUEdge, VVEdge, WWEdge  ))
     
     str1="%15.12f "*29 + " \n"
-    #print str1
+    print str1
     Maxvalues.write( ("%15.12f "*33 +" \n") % \
             (dS, Ue, T1S, T2S, T1e,\
             T2e, UUMax, VVMax, WWMax, UVMax,\
@@ -808,14 +774,9 @@ Delete(clip2)
 del clip2
 
 
-Delete(integrateVariables1)
-del integrateVariables1
-Delete(plotOverLine1)
-del plotOverLine1
-Delete(clip1)
-del clip1
-Delete(slice1)
-del slice1
+
+Delete(probe)
+del probe
 
  
                                                                                                                                                                                                                                                                                                         

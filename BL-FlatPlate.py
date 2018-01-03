@@ -21,13 +21,13 @@ alfa = nu/Pr
 #################
 mm = 500
 first=1e-7
-maxy=3*delta0
+maxy=2*delta0# 3*delta0 harttnet case
 l=np.logspace(np.log10(first), np.log10(maxy), num=mm,base=10)
 l=np.insert(l,0,0)
 #print l
 nn = 2
-Smin=-13
-Smax=-1
+Smin=1 #-13 harttnet case
+Smax=12# -1 hartnett case
 deltaS=1
 nS=(Smax-Smin)/deltaS+1
 SS=np.linspace(Smin,Smax,nS)
@@ -38,7 +38,7 @@ print SS
 n= 5
 #delta=0.02
 zmin=0
-zmax=5
+zmax=3#5 for harttnet case
 sp=zmax-zmin  #spanwise distance
 #############################
 
