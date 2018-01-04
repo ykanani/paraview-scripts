@@ -14,7 +14,7 @@ print(os.getcwd())
 
 n= 100
 xmin=-0.252 
-xmax=0.1
+xmax=0
 Dz=0.254
 Dy=0.3848484754562378
 ratioz=0.9 #ratio of the boxDz tpo Dz
@@ -66,6 +66,8 @@ elif location==1:
 	path1='D:/PostProcess/pvout/'
 elif location==2:
 	path1='/u/sciteam/kanani/tempparaview/'
+elif location==3:
+	path1='/home1/03624/ykanani/tempParaview/'
 
 path2=".plt"
 
