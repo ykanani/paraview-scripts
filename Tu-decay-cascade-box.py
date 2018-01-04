@@ -59,7 +59,7 @@ slice1.SliceType.Origin = [0, 0, 0]
 integrateVariables1 = IntegrateVariables(Input=slice1)
 
 
-location =input("Please enter the location that you are running this script, 0:Marvericks,1:Office PC,2:BW :")
+location =input("Please enter the location that you are running this script, 0:Marvericks,1:Office PC,2:BW,3:Stampede2 :")
 if location==0:
 	path1="/home/03624/ykanani/tempparaview/"
 elif location==1:
