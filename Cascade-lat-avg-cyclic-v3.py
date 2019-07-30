@@ -10,7 +10,7 @@ paraview.simple._DisableFirstRenderCameraReset()
 ##############################
 ##############################
 #############
-mm = 200
+mm = 200 
 first=1e-5
 maxy=0.02
 l=np.logspace(np.log10(first), np.log10(maxy), num=mm,base=10)
