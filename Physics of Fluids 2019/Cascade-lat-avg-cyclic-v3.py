@@ -44,7 +44,8 @@ Uexit = 15.95
 Uinlet = 4
 #############
 ###############################################
-os.chdir(os.path.dirname(os.path.realpath(__file__)))
+pwd = os.path.dirname(os.path.realpath(__file__))
+os.chdir(pwd)
 print(os.getcwd())
 cdata= np.loadtxt('curvecascade')
 cx = cdata[:,0] #curve x coordinates
@@ -177,9 +178,10 @@ integrateVariables2 = IntegrateVariables(Input=clip4)
 ##############################
 
 ####### initializing files #######
-path1='E:/PostProcess/pvout/'
+path1= pwd + 'pvout/'
 path2=".plt"
-
+print(path1)
+alaki
 
 path = path1 + caseName + "_BL_All"  + path2
 boundarylayer = open(path,'a')
