@@ -12,43 +12,35 @@ print(os.getcwd())
 ##############################
 ############# 1.55/100000/0.711*38000/(15.8*(T1Mean-20))
 
-n= 100
-xmin=-0.252 
-xmax=0
-Dz=0.254# 0.15
-Dy=0.3848484754562378
-ratioz=.8 #ratio of the boxDz tpo Dz
-ratioy=0.8 
-nu = 1.55/100000.0
-U = 4
-area = Dz*ratioz*Dy*ratioy
-print('area=',area)
-#############
-###############################
 ## find source
 sourceName = raw_input("Please enter source name: ")
 caseName = sourceName # raw_input("Please enter case name: ")
 print sourceName
 source = FindSource(sourceName + '.foam')
 print source
+
+
+
+n= 100
+xmin=-0.252 
+xmax=0#0.1
+Dz=input("Please enter the span")
+Dy=0.3848484754562378
+ratioz=1 #ratio of the boxDz tpo Dz
+ratioy=1 
+nu = 1.55/100000.0
+U = 4
+area = Dz*ratioz*Dy*ratioy
+print('area=',area)
+#############
+###############################
+
+
 # get active view
 renderView1 = GetActiveViewOrCreate('RenderView')
 
-# create a box clip to exclude near wall reagion
-# create a new 'Clip'
-clip1 = Clip(Input=source)
-clip1.ClipType = 'Box'
-clip1.ClipType.Position = [0.0, 0.0, (Dz*(1-ratioz))/2]
-clip1.ClipType.Scale = [1.0, ratioy, ratioz]
-
-clip1.Invert = 1
-
-
-
-disp = Show(clip1, renderView1)
-
 # create a new 'Slice'
-slice1 = Slice(Input=clip1)
+slice1 = Slice(Input=source)
 slice1.SliceType = 'Plane'
 slice1.SliceOffsetValues = [0.0]
 

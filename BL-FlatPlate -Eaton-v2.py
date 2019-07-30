@@ -1,91 +1,76 @@
+##NOTES: output parameters need to be updates similar to cascade-lati-avg-ver2.py
+#help("modules")
+
+#print(sys.path)
+
 import numpy as np
 import os
-#import sys
+
+
+
 #sys.modules[__name__].__dict__.clear()
 #### import the simple module from the paraview
 from paraview.simple import *
 #### disable automatic camera reset on 'Show'
 paraview.simple._DisableFirstRenderCameraReset()
 ##############################
-##############################
-#############
-mm = 200
-first=1e-7
-maxy=0.02
+
+##Flow properties
+Uinlet = 0.52
+delta0 = 0.005641656
+##Fluid properties
+Pr = 0.711
+nu = 9.5616E-7
+alfa = nu/Pr
+W=0.0498
+D=0.006
+
+
+#################
+mm = 500
+first=1e-9
+maxy=0.025#2*delta0# 3*delta0 harttnet case
 l=np.logspace(np.log10(first), np.log10(maxy), num=mm,base=10)
 l=np.insert(l,0,0)
 #print l
 nn = 2
-Smin=-.45
-Smax=0.6#-.42#
-deltaS=0.01
-nS=(Smax-Smin)/deltaS+1
-SS=np.linspace(Smin,Smax,nS)
+Smin=0.0001 #-13 harttnet case
+Smax=0.32# -1 hartnett case
+deltaS=0.006
+SS=np.arange(deltaS,Smax,deltaS)
+SS=np.insert(SS,0,Smin)
+
+#nS=(Smax-Smin)/deltaS+1
+#SS=np.linspace(Smin,Smax,nS)
 print SS
 
-###############################################
-n= 50
-delta=0.02
-zmin=0.1#0.117 #0.1
-zmax=0.101#0.137 #0.154
+##############################
+
+n= 5
+#delta=0.02
+zmin=-2*D
+zmax=+2*D
 sp=zmax-zmin  #spanwise distance
 
-###FOR 2D case
-#zmin=0.01
-#zmax=0.02
-Pr = 0.711
-nu = 1.55/100000.0
-alfa = nu/Pr
+print sp
+#############################
+
+xi=Smin
+yi=0
+
+##############################
+##Needs review for heat transfer
 gradT = 38000.0
 T0=20
-Uexit = 15.93
-Uinlet = 4
+
+
 #############
-###############################################
-
-cdata= np.loadtxt('E:/PostProcess/PythonScripts/curvecascade')
-cx = cdata[:,0] #curve x coordinates
-cy = cdata[:,1] #curve y coordinates
-cS = cdata[:,2] #curve S
-cm = cdata[:,3] #curve slope
-cR = cdata[:,4] #curve slope
-
-sh = 1 # length scale
-St = 0 #S leading edge
-
-dS =0.2
-Sa =  St + dS*sh  #absolute S
-
-#print cS.size
-w = np.where(cS<Sa)
-#print w
-wtemp = w[0]
-S1 = cS[w][wtemp.size-1] #lower bound
-S2 = cS[np.where(cS>Sa)][0] #upper bound
-
-X1 = cx[w][wtemp.size-1] #lower bound
-X2 = cx[np.where(cS>Sa)][0] #upper bound
-Y1 = cy[w][wtemp.size-1] #lower bound
-Y2 = cy[np.where(cS>Sa)][0] #upper bound
-M1 = cm[w][wtemp.size-1] #lower bound
-M2 = cm[np.where(cS>Sa)][0] #upper bound
-R1 = cR[w][wtemp.size-1] #lower bound
-R2 = cR[np.where(cS>Sa)][0] #upper bound
-xi = X1 + (Sa - S1)*(X2-X1)/(S2-S1)
-yi = Y1 + (Sa - S1)*(Y2-Y1)/(S2-S1)
-mi = M1 + (Sa - S1)*(M2-M1)/(S2-S1)
-ri = R1 + (Sa - S1)*(R2-R1)/(S2-S1)
-r=((Y2-Y1)**2+(X2-X1)**2)**0.5
-
 ##############################
-##############################
-############# 1.55/100000/0.711*38000/(15.8*(T1Mean-20))
-
-
+#############
 ###############################
 ## find source
 sourceName = raw_input("Please enter source name: ")
-tname =input("Please enter 0 for T, 1 for T1 and T2")
+tname =input("Please enter 0:no heat transfer, 1:T, 2:T1 and T2")
 #sourceName = "CL2"
 #tname =input("Please enter 0 for T1, 1 for T2")
 caseName = sourceName # raw_input("Please enter case name: ")
@@ -96,64 +81,62 @@ print source
 # get active view
 renderView1 = GetActiveViewOrCreate('RenderView')
 
+# create a new 'Slice'
+slice1 = Slice(Input=source)
+slice1.SliceType = 'Plane'
+slice1.SliceOffsetValues = [0.0]
+
+# init the 'Plane' selected for 'SliceType'
+slice1.SliceType.Origin = [xi, yi, 0]
+slice1.SliceType.Normal = [1,0, 0.0]
 
 
-probe = ProbeLocation(Input=source,
-    ProbeType='Fixed Radius Point Source')
+
+
+# get active view
+renderView1 = GetActiveViewOrCreate('RenderView')
+
+plotOverLine1 = PlotOverLine(Input=slice1,
+    Source='High Resolution Line Source')
 #start = input("Please enter start: ")
 #end = input("Please enter end: ")
 #sp=0.031750
 # init the 'High Resolution Line Source' selected for 'Source'
 d = 0.1
 
-r=((Y2-Y1)**2+(X2-X1)**2)**0.5
 
 
-probe.ProbeType.Center  = [xi-d*(Y2-Y1)/r, yi+d*(X2-X1)/r, zmin]
+plotOverLine1.Source.Point1 = [xi, yi+d, zmin]
+plotOverLine1.Source.Point2 = [xi, yi+d, zmax]
 
+# Properties modified on plotOverLine1
+plotOverLine1.Tolerance = 2.22044604925031e-16
 
+# create a new 'Integrate Variables'
+integrateVariables1 = IntegrateVariables(Input=plotOverLine1)
 
-if Sa>0:
-    clipy=yi-0.001*(X2-X1)/r
-    clipx=xi+0.001*(Y2-Y1)/r
-else:
-    clipy=yi+0.001*(X2-X1)/r
-    clipx=xi-0.001*(Y2-Y1)/r
 #####################################surface
-
-# create a new 'Slice' on the surface
-clip2 = Clip(Input=sourceS)
+clip1 = Clip(Input=sourceS)
+clip1.ClipType = 'Plane'
+clip1.ClipType.Origin = [0, 0, zmin]
+clip1.ClipType.Normal = [0,0,1]
+clip1.Invert=0
+clip2 = Clip(Input=clip1)
 clip2.ClipType = 'Plane'
-
-# init the 'Plane' selected for 'SliceType'
-clip2.ClipType.Origin = [0, 0, zmin]
-clip2.ClipType.Normal = [0,0,1]
+clip2.ClipType.Origin = [0, 0, zmax]
+clip2.ClipType.Normal = [0,0,-1]
 clip2.Invert=0
-clip3 = Clip(Input=clip2)
-clip3.ClipType = 'Plane'
-
-# init the 'Plane' selected for 'SliceType'
-clip3.ClipType.Origin = [0, 0, zmax]
-clip3.ClipType.Normal = [0,0,-1]
-clip3.Invert=0
-slice2 = Slice(Input=clip3)
+# create a new 'Slice' on the surface
+slice2 = Slice(Input=clip2)
 slice2.SliceType = 'Plane'
 slice2.SliceOffsetValues = [0.0]
 
 # init the 'Plane' selected for 'SliceType'
 slice2.SliceType.Origin = [xi, yi, 0]
-slice2.SliceType.Normal = [X2-X1,Y2-Y1, 0.0]
+slice2.SliceType.Normal = [1,0.0, 0.0]
 
+integrateVariables2 = IntegrateVariables(Input=slice2)
 
-
-clip4 = Clip(Input=slice2)
-clip4.ClipType = 'Plane'
-
-clip4.ClipType.Origin = [clipx, clipy, 0.127]
-clip4.ClipType.Normal = [-(Y2-Y1),(X2-X1),0]
-clip4.Invert=0
-
-integrateVariables2 = IntegrateVariables(Input=clip4)
 ############################################
 ##############################
 ##############################
@@ -185,25 +168,23 @@ Maxvalues.write( "ZONE T=\" " + sourceName + "_MAX_ALL" + "\" \n" )
 path = path1 + caseName + "_Profiles" + path2
 Profiles = open(path,'a')
 
-
-#SS=[0.01 ,.1 ,.2 ,.22 ]
-#SS=[0.1]
-#SS=[-10]
+ri = 0 # dummy
 
 try:
-    del y
+        del y
 except NameError:
-    pass
+        pass
 
 try:
-    del UprofAvg
+        del UprofAvg
 except NameError:
-    pass
+        pass
 
 try:
-    del TprofAvg
+        del TprofAvg
 except NameError:
-    pass
+        pass
+index=1
 
 def intsum(x,dx):
         #print "in intsum ..........."
@@ -220,11 +201,8 @@ def intsum(x,dx):
         
         return np.inner(xAve,dxAve)
 
-
-
-index=1
 for dS in SS:
-    
+
     # restarting main profile variables
     y=[]
     pprofAvg=[]
@@ -256,48 +234,18 @@ for dS in SS:
     
     gradT1profAvg=[]
     gradT2profAvg=[]
-    
-    Sa =  St + dS*sh  #absolute S
+    Sa =  dS
     print "Current Location + " + str(Sa)
-    w =np.where(cS<Sa)
-    wtemp = w[0]
-    #print cS
-    S1 = cS[w][wtemp.size-1] #lower bound
-    S2 = cS[np.where(cS>Sa)][0] #upper bound
-    
-    X1 = cx[w][wtemp.size-1] #lower bound
-    X2 = cx[np.where(cS>Sa)][0] #upper bound
-    
-    Y1 = cy[w][wtemp.size-1] #lower bound
-    Y2 = cy[np.where(cS>Sa)][0] #upper bound
-    
-    M1 = cm[w][wtemp.size-1] #lower bound
-    M2 = cm[np.where(cS>Sa)][0] #upper bound
-    
-    R1 = cR[w][wtemp.size-1] #lower bound
-    R2 = cR[np.where(cS>Sa)][0] #upper bound
-    
-    
-    xi = X1 + (Sa - S1)*(X2-X1)/(S2-S1)
-    yi = Y1 + (Sa - S1)*(Y2-Y1)/(S2-S1)
-    
-    mi = M1 + (Sa - S1)*(M2-M1)/(S2-S1)
-    ri = R1 + (Sa - S1)*(R2-R1)/(S2-S1)
-    
-    r=((Y2-Y1)**2+(X2-X1)**2)**0.5
-    
-    
-    #    if Sa>0:
-    clipy=yi-0.001*(X2-X1)/r
-    clipx=xi+0.001*(Y2-Y1)/r
-    #    else:
-    #        clipy=yi+0.01*(X2-X1)/r
-    #        clipx=xi-0.01*(Y2-Y1)/r
-    
-    
-    clip4.ClipType.Origin = [clipx, clipy, 0.127]
-    clip4.ClipType.Normal = [-(Y2-Y1),(X2-X1),0]
-    
+    xi = Sa
+    yi = 0
+
+    # modify slice1
+    slice1.SliceType.Origin = [xi, yi, 0]
+    slice1.SliceType.Normal = [1,0.0, 0.0]
+    # modify slice 2
+    slice2.SliceType.Origin = [xi, yi, 0]
+    slice2.SliceType.Normal = [1,0, 0.0]
+
     Profiles.write( "VARIABLES= dS Ue utau delta delta95 delta99 delta999 deltas theta \
                                 T1E T2E T1S T2S \
                                 pS \
@@ -314,9 +262,11 @@ for dS in SS:
                                 ThetaT1 ThetaT2 \
                                 TT1 TT2 \
                                 VT1 VT2 \
+                                UT1 UT2 \
+                                Tu \
                                 gradT1 gradT2 \
                                 " + " \n" )
-    Profiles.write( "ZONE T=\" " + sourceName + "_" + str(index) + "\" \n" )
+    Profiles.write( "ZONE T=\" " + sourceName + "_" + str(index) + "_" +  str(round(dS/D,2)) + "\" \n" )
     j=0
     
     for d in l:
@@ -325,88 +275,127 @@ for dS in SS:
         #d=1e-6*(1-1.01**j)/(1-1.01)
         #print j
         #print "d = " +  str(d)
-        probe.ProbeType.Center  = [xi-d*(Y2-Y1)/r, yi+d*(X2-X1)/r, zmin]
-        
-        
-        pdi = servermanager.Fetch(probe)
+        plotOverLine1.Source.Point1 = [xi, yi+d, zmin]
+        plotOverLine1.Source.Point2 = [xi, yi+d, zmax]
+
+
+
+        pdi = servermanager.Fetch(integrateVariables1)
         pdiS = servermanager.Fetch(integrateVariables2)
+        
         #print pdi
         if j ==0 :
             try:
                 wgum = pdiS.GetPointData().GetArray("wallGradUMean")
                 pMeanS = pdiS.GetPointData().GetArray("pMean")
-                
                 if tname==0:
+                    T1S=0
+                    T2S=0
+                    TT1S=0
+                    TT2S=0
+                    gradT2S=0
+                elif tname==1:
                     T1MeanS = pdiS.GetPointData().GetArray("TMean")
                     T2MeanS = pdiS.GetPointData().GetArray("TMean")
                     T1Prime2MeanS = pdiS.GetPointData().GetArray("TPrime2Mean")
                     T2Prime2MeanS = pdiS.GetPointData().GetArray("TPrime2Mean")
+                    gradT1MeanS = pdiS.GetPointData().GetArray("gradTMeantn")
+                    gradT2MeanS = pdiS.GetPointData().GetArray("gradTMeantn")
                 elif tname==1:
+                    T1MeanS = pdiS.GetPointData().GetArray("T1Mean")
+                    T2MeanS = pdiS.GetPointData().GetArray("T1Mean")
+                    T1Prime2MeanS = pdiS.GetPointData().GetArray("T1Prime2Mean")
+                    T2Prime2MeanS = pdiS.GetPointData().GetArray("T1Prime2Mean")
+                    gradT1MeanS = pdiS.GetPointData().GetArray("gradT1Meantn")
+                    gradT2MeanS = pdiS.GetPointData().GetArray("gradT1Meantn")
+                elif tname==2:
                     T1MeanS = pdiS.GetPointData().GetArray("T1Mean")
                     T2MeanS = pdiS.GetPointData().GetArray("T2Mean")
                     T1Prime2MeanS = pdiS.GetPointData().GetArray("T1Prime2Mean")
                     T2Prime2MeanS = pdiS.GetPointData().GetArray("T2Prime2Mean")
+                    gradT1MeanS = pdiS.GetPointData().GetArray("gradT1Meantn")
+                    gradT2MeanS = pdiS.GetPointData().GetArray("gradT2Meantn")
                     
                 wgu = np.sqrt(wgum.GetTuple(0)[0]**2+wgum.GetTuple(0)[1]**2)/sp
                 pS = pMeanS.GetTuple(0)[0]/sp
+                if tname!=0:
+                    T1S = T1MeanS.GetTuple(0)[0]/sp
+                    T2S = T2MeanS.GetTuple(0)[0]/sp
+                    TT1S = T1Prime2MeanS.GetTuple(0)[0]/sp
+                    TT2S = T1Prime2MeanS.GetTuple(0)[0]/sp
+                    gradT1S = gradT1MeanS.GetTuple(0)[0]/sp
+                    gradT2S = gradT2MeanS.GetTuple(0)[0]/sp
+                    print "GradT1S=" + str(gradT1S)
+                    print "GradT2S=" + str(gradT2S)
                 
-                T1S = T1MeanS.GetTuple(0)[0]/sp
-                T2S = T2MeanS.GetTuple(0)[0]/sp
-                TT1S = T1Prime2MeanS.GetTuple(0)[0]/sp
-                TT2S = T1Prime2MeanS.GetTuple(0)[0]/sp
                 print "WGU =" + str(wgu)
             except:
                 #not on the wall
-                print "No wall!!! skipping this dS =" + str(dS)
+                print "No wall or WallgradU is not available!!! skipping this dS/D =" + str(dS/D)
                 wgu = -1
-                ps = 0
-                if tname==0:
+                pS = 0
+                if tname==1:
                     T1MeanS = pdi.GetPointData().GetArray("TMean")
                     T2MeanS = pdi.GetPointData().GetArray("TMean")
                     T1Prime2MeanS = pdi.GetPointData().GetArray("TPrime2Mean")
                     T2Prime2MeanS = pdi.GetPointData().GetArray("TPrime2Mean")
-                elif tname==1:
+                    gradT1MeanS = pdi.GetPointData().GetArray("gradTMean")
+                    gradT2MeanS = pdi.GetPointData().GetArray("gradTMean")
+                elif tname==2:
                     T1MeanS = pdi.GetPointData().GetArray("T1Mean")
                     T2MeanS = pdi.GetPointData().GetArray("T2Mean")
                     T1Prime2MeanS = pdi.GetPointData().GetArray("T1Prime2Mean")
                     T2Prime2MeanS = pdi.GetPointData().GetArray("T2Prime2Mean")
-                
-                T1S = T1MeanS.GetTuple(0)[0]/sp
-                T2S = T2MeanS.GetTuple(0)[0]/sp
-                TT1S = T1Prime2MeanS.GetTuple(0)[0]/sp
-                TT2S = T1Prime2MeanS.GetTuple(0)[0]/sp
+                    gradT1MeanS = pdi.GetPointData().GetArray("gradT1Mean")
+                    gradT2MeanS = pdi.GetPointData().GetArray("gradT1Mean")
+                if tname!=0:
+                    T1S = T1MeanS.GetTuple(0)[0]/sp
+                    T2S = T2MeanS.GetTuple(0)[0]/sp
+                    TT1S = T1Prime2MeanS.GetTuple(0)[0]/sp
+                    TT2S = T1Prime2MeanS.GetTuple(0)[0]/sp
         
         #reading variables
         pMean = pdi.GetPointData().GetArray("pMean")
-        UMean = pdi.GetPointData().GetArray("UMeantn")
-        Ums = pdi.GetPointData().GetArray("UPrime2Meantn")
-        gradUMean = pdi.GetPointData().GetArray("gradUMeantn")
-        nuSgs = pdi.GetPointData().GetArray("pMean")   ##############################FOR LAMINAR I CHANGED NUT TO PMEAN !!!!
-        if tname==0:
+        UMean = pdi.GetPointData().GetArray("UMean")
+        Ums = pdi.GetPointData().GetArray("UPrime2Mean")
+        gradUMean = pdi.GetPointData().GetArray("gradUMean")   
+        nuSgs = pdi.GetPointData().GetArray("nut")   ##############################FOR LAMINAR I CHANGED NUT TO PMEAN !!!!
+        if tname==1:
             T1Mean = pdi.GetPointData().GetArray("TMean")
             T2Mean = pdi.GetPointData().GetArray("TMean")
             
             T1Prime2Mean = pdi.GetPointData().GetArray("TPrime2Mean")
             T2Prime2Mean = pdi.GetPointData().GetArray("TPrime2Mean")
             
-            ut1Mean = pdi.GetPointData().GetArray("utMeantn")
-            ut2Mean = pdi.GetPointData().GetArray("utMeantn")
+            UT1Mean = pdi.GetPointData().GetArray("utAvg")
+            UT2Mean = pdi.GetPointData().GetArray("utAvg")
             
-            gradT1Mean = pdi.GetPointData().GetArray("gradTMeantn")
-            gradT2Mean = pdi.GetPointData().GetArray("gradTMeantn")
-        elif tname==1:
+            gradT1Mean = pdi.GetPointData().GetArray("gradTMean")
+            gradT2Mean = pdi.GetPointData().GetArray("gradTMean")
+        elif tname==2:
+            T1Mean = pdi.GetPointData().GetArray("T1Mean")
+            T2Mean = pdi.GetPointData().GetArray("T1Mean")
+            
+            T1Prime2Mean = pdi.GetPointData().GetArray("T1Prime2Mean")
+            T2Prime2Mean = pdi.GetPointData().GetArray("T1Prime2Mean")
+            
+            UT1Mean = pdi.GetPointData().GetArray("ut1Avg")
+            UT2Mean = pdi.GetPointData().GetArray("ut1Avg")
+            
+            gradT1Mean = pdi.GetPointData().GetArray("gradT1Mean")
+            gradT2Mean = pdi.GetPointData().GetArray("gradT1Mean")
+        elif tname==3:
             T1Mean = pdi.GetPointData().GetArray("T1Mean")
             T2Mean = pdi.GetPointData().GetArray("T2Mean")
             
             T1Prime2Mean = pdi.GetPointData().GetArray("T1Prime2Mean")
             T2Prime2Mean = pdi.GetPointData().GetArray("T2Prime2Mean")
             
-            UT1Mean = pdi.GetPointData().GetArray("ut1Meantn")
-            UT2Mean = pdi.GetPointData().GetArray("ut2Meantn")
+            UT1Mean = pdi.GetPointData().GetArray("ut1Avg")
+            UT2Mean = pdi.GetPointData().GetArray("ut2Avg")
             
-            gradT1Mean = pdi.GetPointData().GetArray("gradT1Meantn")
-            gradT2Mean = pdi.GetPointData().GetArray("gradT2Meantn")
-            
+            gradT1Mean = pdi.GetPointData().GetArray("gradT1Mean")
+            gradT2Mean = pdi.GetPointData().GetArray("gradT2Mean")    
         if d==0:
             #print "if d =0"
             y = [0.0]
@@ -437,8 +426,13 @@ for dS in SS:
             VT1profAvg=[0.0]
             VT2profAvg=[0.0]
             
+            UT1profAvg=[0.0]
+            UT2profAvg=[0.0]
+            
+            TuprofAvg=[0.0]
+            
             gradT1profAvg=[-38000]
-            gradT2profAvg=[-38000]
+            gradT2profAvg=[gradT2S]
         elif  np.isfinite(UMean.GetTuple(0)[0]/sp):
             
             #print "d="+str(d)
@@ -457,23 +451,45 @@ for dS in SS:
             VVprofAvg.append(Ums.GetTuple(0)[1]/sp)
             WWprofAvg.append(Ums.GetTuple(0)[2]/sp)
             
-            gradUprofAvg.append(gradUMean.GetTuple(0)[3]/sp)
+            gradUprofAvg.append(0)#gradUMean.GetTuple(0)[3]/sp)
             
             nuSgsprofAvg.append(nuSgs.GetTuple(0)[0]/sp)
-            
-            T1profAvg.append(T1Mean.GetTuple(0)[0]/sp)
-            T2profAvg.append(T2Mean.GetTuple(0)[0]/sp)
-            
-            TT1profAvg.append(T1Prime2Mean.GetTuple(0)[0]/sp)
-            TT2profAvg.append(T2Prime2Mean.GetTuple(0)[0]/sp)
-            
-            VT1profAvg.append(UT1Mean.GetTuple(0)[1]/sp)
-            VT2profAvg.append(UT2Mean.GetTuple(0)[1]/sp)
-            
-            gradT1profAvg.append(gradT1Mean.GetTuple(0)[1]/sp)
-            gradT2profAvg.append(gradT2Mean.GetTuple(0)[1]/sp)
+            if tname!=0:
+                T1profAvg.append(T1Mean.GetTuple(0)[0]/sp)
+                T2profAvg.append(T2Mean.GetTuple(0)[0]/sp)
+                
+                TT1profAvg.append(T1Prime2Mean.GetTuple(0)[0]/sp)
+                TT2profAvg.append(T2Prime2Mean.GetTuple(0)[0]/sp)
+                
+                VT1profAvg.append(UT1Mean.GetTuple(0)[1]/sp)
+                VT2profAvg.append(UT2Mean.GetTuple(0)[1]/sp)
+                
+                UT1profAvg.append(UT1Mean.GetTuple(0)[0]/sp)
+                UT2profAvg.append(UT2Mean.GetTuple(0)[0]/sp)
+                
+                TuprofAvg.append(np.sqrt((Ums.GetTuple(0)[0]/sp+Ums.GetTuple(0)[1]/sp+Ums.GetTuple(0)[2]/sp)/3))
+                
+                gradT1profAvg.append(gradT1Mean.GetTuple(0)[1]/sp)
+                gradT2profAvg.append(gradT2Mean.GetTuple(0)[1]/sp)
+            else:
+                T1profAvg.append(0)
+                T2profAvg.append(0)
+                
+                TT1profAvg.append(0)
+                TT2profAvg.append(0)
+                
+                VT1profAvg.append(0)
+                VT2profAvg.append(0)
+                
+                UT1profAvg.append(0)
+                UT2profAvg.append(0)
+                
+                TuprofAvg.append(0)
+                
+                gradT1profAvg.append(0)
+                gradT2profAvg.append(0)
         j=j+1
-    print(UprofAvg)
+    print UprofAvg
     print all([UprofAvg[i] <=0 for i in range(len(UprofAvg)) ])
     UprofAvgAbs=[]
     UprofAvgAbs = map(abs,UprofAvg)
@@ -488,9 +504,9 @@ for dS in SS:
     U999= [x for x in UprofAvgAbs if x >= 0.999*Ue][0]
     
     delta = y[UeIndex]
-    delta95 = y[U95Index]
-    delta99 = y[U99Index]
-    delta999 = y[U999Index]
+    delta95 = (0.95*Ue-UprofAvg[U95Index-1])/(UprofAvg[U95Index]-UprofAvg[U95Index-1])*(y[U95Index]-y[U95Index-1])+y[U95Index-1]
+    delta99 = (0.99*Ue-UprofAvg[U99Index-1])/(UprofAvg[U99Index]-UprofAvg[U99Index-1])*(y[U99Index]-y[U99Index-1])+y[U99Index-1]
+    delta999 = (0.999*Ue-UprofAvg[U999Index-1])/(UprofAvg[U999Index]-UprofAvg[U999Index-1])*(y[U999Index]-y[U999Index-1])+y[U999Index-1]
     
     print "Ue = " + str(Ue)
     ## delta* (displacement thickness
@@ -518,70 +534,6 @@ for dS in SS:
     if np.isnan(utau):
         utau=np.sqrt(-nu*wgu)
     
-    #Temperature
-    
-    T1eIndex = len(y) #T1profAvg.index(T1e)
-    ## edge temperature
-    T1e = T0 # T1profAvg[T1eIndex-1] #T1e = max(T1profAvg)
-    
-    ## edge temperature
-    T2eIndex = len(y) #T2profAvg.index(T1e)
-    T2e = T0 #T2profAvg[T2eIndex-1]# T2e = min(T2profAvg)
-    #print T2eIndex
-    
-    DT1 = T1S-T1e
-    DT2 = T2S-T2e
-#    print DT1
-#    print DT2
-    if DT1==0:
-        thetaT1prof = [ 0 for x in T1profAvg]
-        DT1=1e-10
-    else:
-        thetaT1prof = [ (x-T1e)/DT1 for x in T1profAvg]
-    if DT2==0:
-        thetaT2prof = [ 0 for x in T2profAvg]
-        DT2=1e-10
-    else:
-        thetaT2prof = [(x-T2e)/DT2 for x in T2profAvg]
-        
-    St1 = alfa * gradT / (Uexit*(T1S-T0))
-    St2 = alfa * gradT / (Uexit*(T1S-T0))
-    
-    #    print thetaT1prof
-    #    print DT1
-    #    print DT2
-    
-    #thetaT1prof = [(x-T1e)/DT1 for x in T1profAvg[0:T1eIndex]]
-    #thetaT2prof = [(x-T2e)/DT2 for x in T2profAvg[0:T2eIndex]]
-    #    print thetaT1prof
-    #print [i for i in range(len(thetaT1prof))][0]
-    
-    T195Index = [i for i in range(len(thetaT1prof)) if thetaT1prof[i] <= 0.05][0]
-    T199Index = [i for i in range(len(thetaT1prof)) if thetaT1prof[i] <= 0.01][0]
-    T1999Index = [i for i in range(len(thetaT1prof)) if thetaT1prof[i] <= 0.005][0]
-    
-    
-    T295Index = [i for i in range(len(thetaT2prof)) if thetaT2prof[i] <= 0.05][0]
-    T299Index = [i for i in range(len(thetaT2prof)) if thetaT2prof[i] <= 0.01][0]
-    T2999Index = [i for i in range(len(thetaT2prof)) if thetaT2prof[i] <= 0.005][0]
-    
-    
-    deltaT1 = y[T1eIndex-1]
-    deltaT195 = y[T195Index]
-    deltaT199 = y[T199Index]
-    deltaT1999 = y[T1999Index]
-    
-    
-    
-    deltaT2 = y[T2eIndex-1]
-    deltaT295 = y[T295Index]
-    deltaT299 = y[T299Index]
-    deltaT2999 = y[T2999Index]
-    
-    
-    deltaT1W = intsum([(x-T1e)/DT1 for x in T1profAvg[0:T1eIndex]],[x for x in y[0:T1eIndex]])
-    deltaT2W = intsum([(x-T2e)/DT2 for x in T2profAvg[0:T2eIndex]],[x for x in y[0:T2eIndex]])
-    
     #writing profiles 
     dSArray = np.ones(len(y))*dS
     UeArray = np.ones(len(y))*Ue
@@ -592,23 +544,149 @@ for dS in SS:
     delta999Array = np.ones(len(y))*delta999
     deltasArray = np.ones(len(y))*deltas
     thetaArray = np.ones(len(y))*theta
-    
-    T1eArray = np.ones(len(y))*T1e
-    T2eArray = np.ones(len(y))*T2e
-    
-    T1SArray = np.ones(len(y))*T1S
-    T2SArray = np.ones(len(y))*T2S
-    
     pSArray = np.ones(len(y))*pS
-    
-    deltaT1WArray = np.ones(len(y))*deltaT1W
-    deltaT2WArray = np.ones(len(y))*deltaT2W
-    
-    delta95T1Array = np.ones(len(y))*deltaT195
-    delta95T2Array = np.ones(len(y))*deltaT295
-    
-    delta99T1Array = np.ones(len(y))*deltaT199
-    delta99T2Array = np.ones(len(y))*deltaT299
+    #Temperature
+    if tname!=0:
+        T1eIndex = len(y) #T1profAvg.index(T1e)
+        ## edge temperature
+        T1e = T0 # T1profAvg[T1eIndex-1] #T1e = max(T1profAvg)
+        
+        ## edge temperature
+        T2eIndex = len(y) #T2profAvg.index(T1e)
+        T2e = T0 #T2profAvg[T2eIndex-1]# T2e = min(T2profAvg)
+        #print T2eIndex
+        
+        DT1 = T1S-T1e
+        DT2 = T2S-T2e
+    #    print DT1
+    #    print DT2
+        if DT1==0:
+            thetaT1prof = [ 0 for x in T1profAvg]
+            DT1=1e-10
+        else:
+            thetaT1prof = [ (x-T1e)/DT1 for x in T1profAvg]
+        if DT2==0:
+            thetaT2prof = [ 0 for x in T2profAvg]
+            DT2=1e-10
+        else:
+            thetaT2prof = [(x-T2e)/DT2 for x in T2profAvg]
+            
+        St1 = alfa * gradT / (Ue*(T1S-T0))
+        St2 = alfa * gradT / (Ue*(T1S-T0))
+        
+        #    print thetaT1prof
+        #    print DT1
+        #    print DT2
+        
+        #thetaT1prof = [(x-T1e)/DT1 for x in T1profAvg[0:T1eIndex]]
+        #thetaT2prof = [(x-T2e)/DT2 for x in T2profAvg[0:T2eIndex]]
+        #    print thetaT1prof
+        #print [i for i in range(len(thetaT1prof))][0]
+        
+        T195Index = [i for i in range(len(thetaT1prof)) if thetaT1prof[i] <= 0.05][0]
+        T199Index = [i for i in range(len(thetaT1prof)) if thetaT1prof[i] <= 0.01][0]
+        T1999Index = [i for i in range(len(thetaT1prof)) if thetaT1prof[i] <= 0.005][0]
+        
+        
+        T295Index = [i for i in range(len(thetaT2prof)) if thetaT2prof[i] <= 0.05][0]
+        T299Index = [i for i in range(len(thetaT2prof)) if thetaT2prof[i] <= 0.01][0]
+        T2999Index = [i for i in range(len(thetaT2prof)) if thetaT2prof[i] <= 0.005][0]
+        
+        
+        deltaT1 = y[T1eIndex-1]
+        deltaT195 = y[T195Index]
+        deltaT199 = y[T199Index]
+        deltaT1999 = y[T1999Index]
+        
+        
+        
+        deltaT2 = y[T2eIndex-1]
+        deltaT295 = y[T295Index]
+        deltaT299 = y[T299Index]
+        deltaT2999 = y[T2999Index]
+        
+        
+        deltaT1W = intsum([(x-T1e)/DT1 for x in T1profAvg[0:T1eIndex]],[x for x in y[0:T1eIndex]])
+        deltaT2W = intsum([(x-T2e)/DT2 for x in T2profAvg[0:T2eIndex]],[x for x in y[0:T2eIndex]])
+        
+        
+        
+        T1eArray = np.ones(len(y))*T1e
+        T2eArray = np.ones(len(y))*T2e
+        
+        T1SArray = np.ones(len(y))*T1S
+        T2SArray = np.ones(len(y))*T2S
+        
+        pSArray = np.ones(len(y))*pS
+        
+        deltaT1WArray = np.ones(len(y))*deltaT1W
+        deltaT2WArray = np.ones(len(y))*deltaT2W
+        
+        delta95T1Array = np.ones(len(y))*deltaT195
+        delta95T2Array = np.ones(len(y))*deltaT295
+        
+        delta99T1Array = np.ones(len(y))*deltaT199
+        delta99T2Array = np.ones(len(y))*deltaT299
+        
+    else:
+        T1eIndex = 0 #T1profAvg.index(T1e)
+        ## edge temperature
+        T1e = T0 # T1profAvg[T1eIndex-1] #T1e = max(T1profAvg)
+        
+        ## edge temperature
+        T2eIndex = 0 #T2profAvg.index(T1e)
+        T2e = T0 #T2profAvg[T2eIndex-1]# T2e = min(T2profAvg)
+        #print T2eIndex
+        
+        thetaT1prof = [ 0 for x in T1profAvg]
+        thetaT2prof = [ 0 for x in T1profAvg]
+        
+        St1 = 0
+        St2 = 0
+        
+        #    print thetaT1prof
+        #    print DT1
+        #    print DT2
+        
+        #thetaT1prof = [(x-T1e)/DT1 for x in T1profAvg[0:T1eIndex]]
+        #thetaT2prof = [(x-T2e)/DT2 for x in T2profAvg[0:T2eIndex]]
+        #    print thetaT1prof
+        #print [i for i in range(len(thetaT1prof))][0]
+        
+        
+        deltaT1 = 0
+        deltaT195 = 0
+        deltaT199 = 0
+        deltaT1999 = 0
+        
+        
+        
+        deltaT2 = 0
+        deltaT295 = 0
+        deltaT299 = 0
+        deltaT2999 = 0
+        
+        
+        deltaT1W = 0
+        deltaT2W = 0
+        #writing profiles 
+                
+        T1eArray = np.ones(len(y))*0
+        T2eArray = np.ones(len(y))*0
+        
+        T1SArray = np.ones(len(y))*0
+        T2SArray = np.ones(len(y))*0
+        
+
+        
+        deltaT1WArray = np.ones(len(y))*0
+        deltaT2WArray = np.ones(len(y))*0
+        
+        delta95T1Array = np.ones(len(y))*0
+        delta95T2Array = np.ones(len(y))*0
+        
+        delta99T1Array = np.ones(len(y))*0
+        delta99T2Array = np.ones(len(y))*0
     
     #print len(thetaT2prof)
     #print len(T2profAvg)
@@ -632,8 +710,10 @@ for dS in SS:
                                 thetaT1prof, thetaT2prof,\
                                 TT1profAvg,TT2profAvg,\
                                 VT1profAvg,VT2profAvg,\
+                                UT1profAvg,UT2profAvg,\
+                                TuprofAvg,\
                                 gradT1profAvg,gradT2profAvg],
-                            fmt="%15.12f "*43)
+                            fmt="%15.12f "*46)
     
     
     print "delta  = " + str(delta)
@@ -656,6 +736,8 @@ for dS in SS:
     UWEdge = UWprofAvg[U99Index]
     VWEdge = VWprofAvg[U99Index]
     
+    TuEdge = TuprofAvg[U99Index]
+    
     UUMax = max(UUprofAvg)
     VVMax = max(VVprofAvg)
     WWMax = max(WWprofAvg)
@@ -664,6 +746,7 @@ for dS in SS:
     UWMax = max(UWprofAvg)
     VWMax = max(VWprofAvg)
     
+    TuMax = max(TuprofAvg)
     
     UUMaxIndex = UUprofAvg.index(UUMax)
     VVMaxIndex = VVprofAvg.index(VVMax)
@@ -673,6 +756,7 @@ for dS in SS:
     UWMaxIndex = UWprofAvg.index(UWMax)
     VWMaxIndex = VWprofAvg.index(VWMax)
     
+    TuMaxIndex = TuprofAvg.index(TuMax)
     
     yUUMax = y[UUMaxIndex]
     yVVMax = y[VVMaxIndex]
@@ -680,6 +764,8 @@ for dS in SS:
     yUVMax = y[UVMaxIndex]
     yUWMax = y[UWMaxIndex]
     yVWMax = y[VWMaxIndex]
+    
+    yTuMax = y[TuMaxIndex]
     
     UVMaxNon = UVMax / Ue**2
     #thermal
@@ -719,14 +805,14 @@ for dS in SS:
                     deltaT1W, deltaT2W, cf1, cf2, utau, ri, UUEdge, VVEdge, WWEdge  ))
     
     str1="%15.12f "*29 + " \n"
-    print str1
-    Maxvalues.write( ("%15.12f "*33 +" \n") % \
+    #print str1
+    Maxvalues.write( ("%15.12f "*36 +" \n") % \
             (dS, Ue, T1S, T2S, T1e,\
             T2e, UUMax, VVMax, WWMax, UVMax,\
-            UWMax, VWMax, UVMaxNon, UUEdge, VVEdge,\
-            WWEdge, UVEdge, UWEdge, VWEdge, TT1Max,\
+            UWMax, VWMax, UVMaxNon, TuMax, UUEdge, VVEdge,\
+            WWEdge, UVEdge, UWEdge, VWEdge, TuEdge, TT1Max,\
             TT2Max,yUUMax, yVVMax, yWWMax, yUVMax,\
-            yUWMax,yVWMax, yTT1Max, yTT2Max, delta, delta95, delta99, delta999))
+            yUWMax,yVWMax, yTuMax, yTT1Max, yTT2Max, delta, delta95, delta99, delta999))
     
     index=index+1
     #print "index=" + str(index)
@@ -747,6 +833,7 @@ for dS in SS:
     del UVprofAvg
     del UWprofAvg
     del VWprofAvg
+    del TuprofAvg
     del dSArray
     del UeArray
     del utauArray
@@ -767,17 +854,13 @@ Delete(integrateVariables2)
 del integrateVariables2
 Delete(slice2)
 del slice2
-Delete(clip4)
-del clip4
-Delete(clip3)
-del clip3
+Delete(clip1)
+del clip1
 Delete(clip2)
 del clip2
 
-
-
-Delete(probe)
-del probe
-
- 
+Delete(integrateVariables1)
+del integrateVariables1
+Delete(plotOverLine1)
+del plotOverLine1 
                                                                                                                                                                                                                                                                                                         

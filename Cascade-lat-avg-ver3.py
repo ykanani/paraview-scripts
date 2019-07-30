@@ -9,15 +9,15 @@ paraview.simple._DisableFirstRenderCameraReset()
 ##############################
 ##############################
 #############
-mm = 200
-first=1e-7
+mm = 75
+first=1e-5
 maxy=0.02
 l=np.logspace(np.log10(first), np.log10(maxy), num=mm,base=10)
 l=np.insert(l,0,0)
 #print l
 nn = 2
-Smin=-.45
-Smax=0.1
+Smin=-0.45
+Smax=0.6
 deltaS=0.01
 nS=(Smax-Smin)/deltaS+1
 SS=np.linspace(Smin,Smax,nS)
@@ -26,8 +26,8 @@ print SS
 ###############################################
 n= 50
 delta=0.02
-zmin=0.0117#0.117 #0.1
-zmax=0.0137#0.137 #0.154
+zmin=0.1#0.117 #0.1
+zmax=0.154#0.137 #0.154
 sp=zmax-zmin  #spanwise distance
 
 ###FOR 2D case
@@ -43,7 +43,7 @@ Uinlet = 4
 #############
 ###############################################
 
-cdata= np.loadtxt('D:/PostProcess/PythonScripts/curvecascade')
+cdata= np.loadtxt('E:/PostProcess/PythonScripts/curvecascade')
 cx = cdata[:,0] #curve x coordinates
 cy = cdata[:,1] #curve y coordinates
 cS = cdata[:,2] #curve S
@@ -124,7 +124,7 @@ else:
 
 clip1.ClipType.Origin = [clipx, clipy, 0.127]
 clip1.ClipType.Normal = [-(Y2-Y1),(X2-X1),0]
-
+clip1.Invert=0
 
 plotOverLine1 = PlotOverLine(Input=clip1,
     Source='High Resolution Line Source')
@@ -155,6 +155,7 @@ clip2.ClipType = 'Plane'
 # init the 'Plane' selected for 'SliceType'
 clip2.ClipType.Origin = [0, 0, zmin]
 clip2.ClipType.Normal = [0,0,1]
+clip2.Invert=0
 
 clip3 = Clip(Input=clip2)
 clip3.ClipType = 'Plane'
@@ -162,7 +163,7 @@ clip3.ClipType = 'Plane'
 # init the 'Plane' selected for 'SliceType'
 clip3.ClipType.Origin = [0, 0, zmax]
 clip3.ClipType.Normal = [0,0,-1]
-
+clip3.Invert=0
 slice2 = Slice(Input=clip3)
 slice2.SliceType = 'Plane'
 slice2.SliceOffsetValues = [0.0]
@@ -178,7 +179,7 @@ clip4.ClipType = 'Plane'
 
 clip4.ClipType.Origin = [clipx, clipy, 0.127]
 clip4.ClipType.Normal = [-(Y2-Y1),(X2-X1),0]
-
+clip4.Invert=0
 
 integrateVariables2 = IntegrateVariables(Input=clip4)
 ############################################
@@ -187,7 +188,7 @@ integrateVariables2 = IntegrateVariables(Input=clip4)
 ##############################
 
 ####### initializing files #######
-path1='D:/PostProcess/pvout/'
+path1='E:/PostProcess/pvout/'
 path2=".plt"
 
 
@@ -331,7 +332,7 @@ for dS in SS:
     
     clip4.ClipType.Origin = [clipx, clipy, 0.127]
     clip4.ClipType.Normal = [-(Y2-Y1),(X2-X1),0]
-    
+
     Profiles.write( "VARIABLES= dS Ue utau delta delta95 delta99 delta999 deltas theta \
                                 T1E T2E T1S T2S \
                                 pS \
@@ -507,6 +508,7 @@ for dS in SS:
             gradT1profAvg.append(gradT1Mean.GetTuple(0)[1]/sp)
             gradT2profAvg.append(gradT2Mean.GetTuple(0)[1]/sp)
         j=j+1
+    print UprofAvg
     print all([UprofAvg[i] <=0 for i in range(len(UprofAvg)) ])
     UprofAvgAbs=[]
     UprofAvgAbs = map(abs,UprofAvg)
