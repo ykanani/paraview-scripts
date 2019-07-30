@@ -40,12 +40,13 @@ nu = 1.55/100000.0
 alfa = nu/Pr
 gradT = 38000.0
 T0=20
-Uexit = 15.93
+Uexit = 15.95
 Uinlet = 4
 #############
 ###############################################
-
-cdata= np.loadtxt('E:/PostProcess/PythonScripts/curvecascade')
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
+print(os.getcwd())
+cdata= np.loadtxt('curvecascade')
 cx = cdata[:,0] #curve x coordinates
 cy = cdata[:,1] #curve y coordinates
 cS = cdata[:,2] #curve S
