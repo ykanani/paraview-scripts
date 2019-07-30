@@ -15,7 +15,11 @@ print(os.getcwd())
 n= 100
 xmin=-0.252 
 xmax=0
+<<<<<<< HEAD
 Dz=0.254# 0.15
+=======
+Dz=0.254
+>>>>>>> 1881923f1406b1c2e722f5e5733ce6c462749597
 Dy=0.3848484754562378
 ratioz=.8 #ratio of the boxDz tpo Dz
 ratioy=0.8 
@@ -59,13 +63,15 @@ slice1.SliceType.Origin = [0, 0, 0]
 integrateVariables1 = IntegrateVariables(Input=slice1)
 
 
-location =input("Please enter the location that you are running this script, 0:Marvericks,1:Office PC,2:BW :")
+location =input("Please enter the location that you are running this script, 0:Marvericks,1:Office PC,2:BW,3:Stampede2 :")
 if location==0:
 	path1="/home/03624/ykanani/tempparaview/"
 elif location==1:
 	path1='E:/PostProcess/pvout/'
 elif location==2:
 	path1='/u/sciteam/kanani/tempparaview/'
+elif location==3:
+	path1='/home1/03624/ykanani/tempParaview/'
 
 path2=".plt"
 
