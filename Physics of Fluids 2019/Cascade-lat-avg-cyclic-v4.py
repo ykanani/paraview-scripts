@@ -1,5 +1,6 @@
 ##v2 added back the slices to reduce computational efforts
-
+##v3 added other components of gradT
+##v4 converted lists to numpy array
 #import sys
 #sys.modules[__name__].__dict__.clear()
 #### import the simple module from the paraview
@@ -12,9 +13,9 @@ paraview.simple._DisableFirstRenderCameraReset()
 ##############################
 ##############################
 #############
-mm = 400 
+mm = 200 
 first=1e-5
-maxy=0.03
+maxy=0.02
 l=np.logspace(np.log10(first), np.log10(maxy), num=mm,base=10)
 l=np.insert(l,0,0)
 #print l
@@ -30,8 +31,8 @@ L=0.4976
 ###############################################
 n= 50
 delta=0.02
-zmin=-0.0599#0.117 #0.1
-zmax=0.0599#0.137 #0.154
+zmin=-0.05999#0.117 #0.1
+zmax=0.05999#0.137 #0.154
 sp=zmax-zmin  #spanwise distance
 print("sp=" + str(sp))
 ###FOR 2D case
@@ -103,7 +104,7 @@ r=((Y2-Y1)**2+(X2-X1)**2)**0.5
 
 ###############################
 ## find source
-sourceName = raw_input("Please enter source name: ")
+sourceName = 'ccc9' #raw_input("Please enter source name: ")
 tname =2 #input("Please enter 0 for T, 1 for T1, and 2 for T1 and T2")
 #sourceName = "CL2"
 #tname =input("Please enter 0 for T1, 1 for T2")
@@ -238,20 +239,19 @@ try:
 except NameError:
     pass
 
-def intsum(x,dx):
+def intsum(f,x):
         #print "in intsum ..........."
         #print x
         #print dx
         lenx = len(x)
         #print lenx
-        x0 = x[0:lenx-1]
-        x1 = x[1:lenx]
-        xAve = [sum(x)/2.0 for x in zip(x0,x1)]
-        dx0 = dx[0:lenx-1]
-        dx1 = dx[1:lenx]
-        dxAve = [xx1 - xx0 for xx1 , xx0 in zip(dx1,dx0)]
+        f0 = f[0:lenx-1]
+        f1 = f[1:lenx]
+        fAve = (f0+f1)/2 #[sum(x)/2.0 for x in zip(x0,x1)]
         
-        return np.inner(xAve,dxAve)
+        dx = np.diff(x) ##[xx1 - xx0 for xx1 , xx0 in zip(dx1,dx0)]
+        
+        return np.inner(fAve,dx)
 
 
 
@@ -259,36 +259,44 @@ index=1
 for dS in SS:
     
     # restarting main profile variables
-    y=[]
-    pprofAvg=[]
+    y=np.zeros(mm)
+    pprofAvg=np.zeros(mm)
     
-    UprofAvg=[]
-    VprofAvg=[]
-    WprofAvg=[]
+    UprofAvg=np.zeros(mm)
+    VprofAvg=np.zeros(mm)
+    WprofAvg=np.zeros(mm)
     
-    UVprofAvg=[]
-    VWprofAvg=[]
-    UWprofAvg=[]
+    UVprofAvg=np.zeros(mm)
+    VWprofAvg=np.zeros(mm)
+    UWprofAvg=np.zeros(mm)
     
-    UUprofAvg=[]
-    VVprofAvg=[]
-    WWprofAvg=[]
+    UUprofAvg=np.zeros(mm)
+    VVprofAvg=np.zeros(mm)
+    WWprofAvg=np.zeros(mm)
     
-    gradUprgAvg=[]
+    gradUprofAvg=np.zeros(mm)
     
-    nuSgsprofAvg=[]
+    nuSgsprofAvg=np.zeros(mm)
     
-    T1profAvg=[]
-    T2profAvg=[]
+    T1profAvg=np.zeros(mm)
+    T2profAvg=np.zeros(mm)
     
-    TT1profAvg=[]
-    TT2profAvg=[]
+    TT1profAvg=np.zeros(mm)
+    TT2profAvg=np.zeros(mm)
     
-    VT1profAvg=[]
-    VT2profAvg=[]
-    
-    gradT1profAvg=[]
-    gradT2profAvg=[]
+    VT1profAvg=np.zeros(mm)
+    VT2profAvg=np.zeros(mm)
+
+    UT1profAvg=np.zeros(mm)
+    UT2profAvg=np.zeros(mm)
+
+    TuprofAvg=np.zeros(mm)
+
+    gradT1NprofAvg=np.zeros(mm)
+    gradT2NprofAvg=np.zeros(mm)
+    gradT1TprofAvg=np.zeros(mm)
+    gradT2TprofAvg=np.zeros(mm)
+
     
     Sa =  St + dS*sh  #absolute S
     print "Current Location + " + str(Sa)
@@ -363,10 +371,10 @@ for dS in SS:
                                 gradT1tS gradT2tS \
                                 " + " \n" )
     Profiles.write( "ZONE T=\" " + sourceName + "_" + str(index) + "_" +  str(round(dS/L,2)) + "\" \n" )
-    j=0
-    
-    for d in l:
-        
+    #j=0
+    #for d in l:
+    for j in range(mm):
+        d=l[j]
         #d = maxy/(mm-1)*j
         #d=1e-6*(1-1.01**j)/(1-1.01)
         #print j
@@ -492,110 +500,114 @@ for dS in SS:
             gradT2Mean = pdi.GetPointData().GetArray("gradT2Meantn")    
         if d==0:
             #print "if d =0"
-            y = [0.0]
-            pprofAvg=[pS]
+            y[j] = 0.0
+            pprofAvg[j]=pS
             
-            UprofAvg= [0.0]
-            VprofAvg=[0.0]
-            WprofAvg=[0.0]
+            UprofAvg[j]=0.0
+            VprofAvg[j]=0.0
+            WprofAvg[j]=0.0
             
-            UVprofAvg=[0.0]
-            UWprofAvg=[0.0]
-            VWprofAvg=[0.0]
+            UVprofAvg[j]=0.0
+            UWprofAvg[j]=0.0
+            VWprofAvg[j]=0.0
             
-            UUprofAvg=[0.0]
-            VVprofAvg=[0.0]
-            WWprofAvg=[0.0]
+            UUprofAvg[j]=0.0
+            VVprofAvg[j]=0.0
+            WWprofAvg[j]=0.0
             
-            gradUprofAvg=[wgu]
+            gradUprofAvg[j]=wgu
             
-            nuSgsprofAvg=[0.0]
+            nuSgsprofAvg[j]=0.0
             
-            T1profAvg= [T1S]
-            T2profAvg= [T2S]
+            T1profAvg[j]= T1S
+            T2profAvg[j]= T2S
             
-            TT1profAvg=[TT1S]
-            TT2profAvg=[TT2S]
+            TT1profAvg[j]=TT1S
+            TT2profAvg[j]=TT2S
             
-            VT1profAvg=[0.0]
-            VT2profAvg=[0.0]
+            VT1profAvg[j]=0.0
+            VT2profAvg[j]=0.0
             
-            UT1profAvg=[0.0]
-            UT2profAvg=[0.0]
+            UT1profAvg[j]=0.0
+            UT2profAvg[j]=0.0
             
-            TuprofAvg=[0.0]
+            TuprofAvg[j]=0.0
             
-            gradT1NprofAvg=[-38000]
-            gradT2NprofAvg=[gradT2NS]
-            gradT1TprofAvg=[gradT1TS]
-            gradT2TprofAvg=[gradT2TS]
+            gradT1NprofAvg[j]=-38000
+            gradT2NprofAvg[j]=gradT2NS
+            gradT1TprofAvg[j]=gradT1TS
+            gradT2TprofAvg[j]=gradT2TS
         elif  np.isfinite(UMean.GetTuple(0)[0]/sp):
             
             #print "d="+str(d)
-            y.append(d)
-            pprofAvg.append(pMean.GetTuple(0)[0]/sp)
+            y[j]=d
+            #print j
+            pprofAvg[j]=pMean.GetTuple(0)[0]/sp
             
-            UprofAvg.append(UMean.GetTuple(0)[0]/sp)
-            VprofAvg.append(UMean.GetTuple(0)[1]/sp)
-            WprofAvg.append(UMean.GetTuple(0)[2]/sp)
+            UprofAvg[j]=UMean.GetTuple(0)[0]/sp
+            VprofAvg[j]=UMean.GetTuple(0)[1]/sp
+            WprofAvg[j]=UMean.GetTuple(0)[2]/sp
             
-            UVprofAvg.append(Ums.GetTuple(0)[3]/sp)
-            VWprofAvg.append(Ums.GetTuple(0)[4]/sp)
-            UWprofAvg.append(Ums.GetTuple(0)[5]/sp)
+            UVprofAvg[j]=Ums.GetTuple(0)[3]/sp
+            VWprofAvg[j]=Ums.GetTuple(0)[4]/sp
+            UWprofAvg[j]=Ums.GetTuple(0)[5]/sp
             
-            UUprofAvg.append(Ums.GetTuple(0)[0]/sp)
-            VVprofAvg.append(Ums.GetTuple(0)[1]/sp)
-            WWprofAvg.append(Ums.GetTuple(0)[2]/sp)
+            UUprofAvg[j]=Ums.GetTuple(0)[0]/sp
+            VVprofAvg[j]=Ums.GetTuple(0)[1]/sp
+            WWprofAvg[j]=Ums.GetTuple(0)[2]/sp
             
-            gradUprofAvg.append(gradUMean.GetTuple(0)[3]/sp)
+            gradUprofAvg[j]=gradUMean.GetTuple(0)[3]/sp
             
-            nuSgsprofAvg.append(nuSgs.GetTuple(0)[0]/sp)
+            nuSgsprofAvg[j]=nuSgs.GetTuple(0)[0]/sp
             
-            T1profAvg.append(T1Mean.GetTuple(0)[0]/sp)
-            T2profAvg.append(T2Mean.GetTuple(0)[0]/sp)
+            T1profAvg[j]=T1Mean.GetTuple(0)[0]/sp
+            T2profAvg[j]=T2Mean.GetTuple(0)[0]/sp
             
-            TT1profAvg.append(T1Prime2Mean.GetTuple(0)[0]/sp)
-            TT2profAvg.append(T2Prime2Mean.GetTuple(0)[0]/sp)
+            TT1profAvg[j]=T1Prime2Mean.GetTuple(0)[0]/sp
+            TT2profAvg[j]=T2Prime2Mean.GetTuple(0)[0]/sp
             
-            VT1profAvg.append(UT1Mean.GetTuple(0)[1]/sp)
-            VT2profAvg.append(UT2Mean.GetTuple(0)[1]/sp)
+            VT1profAvg[j]=UT1Mean.GetTuple(0)[1]/sp
+            VT2profAvg[j]=UT2Mean.GetTuple(0)[1]/sp
             
-            UT1profAvg.append(UT1Mean.GetTuple(0)[0]/sp)
-            UT2profAvg.append(UT2Mean.GetTuple(0)[0]/sp)
+            UT1profAvg[j]=UT1Mean.GetTuple(0)[0]/sp
+            UT2profAvg[j]=UT2Mean.GetTuple(0)[0]/sp
             
-            TuprofAvg.append(np.sqrt((Ums.GetTuple(0)[0]/sp+Ums.GetTuple(0)[1]/sp+Ums.GetTuple(0)[2]/sp)/3))
+            TuprofAvg[j]=np.sqrt((Ums.GetTuple(0)[0]/sp+Ums.GetTuple(0)[1]/sp+Ums.GetTuple(0)[2]/sp)/3)
             
-            gradT1NprofAvg.append(gradT1Mean.GetTuple(0)[1]/sp)
-            gradT2NprofAvg.append(gradT2Mean.GetTuple(0)[1]/sp)
+            gradT1NprofAvg[j]=gradT1Mean.GetTuple(0)[1]/sp
+            gradT2NprofAvg[j]=gradT2Mean.GetTuple(0)[1]/sp
 
-            gradT1TprofAvg.append(gradT1Mean.GetTuple(0)[0]/sp)
-            gradT2TprofAvg.append(gradT2Mean.GetTuple(0)[0]/sp)
-        j=j+1
-    print UprofAvg
-    print all([UprofAvg[i] <=0 for i in range(len(UprofAvg)) ])
-    UprofAvgAbs=[]
-    UprofAvgAbs = map(abs,UprofAvg)
-    Ue = max(UprofAvgAbs)
-    UeIndex = UprofAvgAbs.index(Ue)
-    U95Index = [i for i in range(len(UprofAvg)) if UprofAvgAbs[i] >= 0.95*Ue][0]
-    U99Index = [i for i in range(len(UprofAvg)) if UprofAvgAbs[i] >= 0.99*Ue][0]
-    U999Index = [i for i in range(len(UprofAvg)) if UprofAvgAbs[i] >= 0.999*Ue][0]
+            gradT1TprofAvg[j]=gradT1Mean.GetTuple(0)[0]/sp
+            gradT2TprofAvg[j]=gradT2Mean.GetTuple(0)[0]/sp
+        else:
+            print('Nan Detected')
+
+    #print T1profAvg
     
-    U95= [x for x in UprofAvgAbs if x >= 0.95*Ue][0]
-    U99= [x for x in UprofAvgAbs if x >= 0.99*Ue][0]
-    U999= [x for x in UprofAvgAbs if x >= 0.999*Ue][0]
     
-    delta = y[UeIndex]
-    delta95 = y[U95Index]
-    delta99 = y[U99Index]
-    delta999 = y[U999Index]
+    UprofAvgAbs = np.absolute(UprofAvg)
+    Ue = np.amax(UprofAvg)
+
+    
+    U95= UprofAvg[np.where(UprofAvg>=0.95*Ue)]
+    U99= UprofAvg[np.where(UprofAvg>=0.99*Ue)]
+    U999= UprofAvg[np.where(UprofAvg>=0.999*Ue)]
+
+    
+    delta = y[np.where(UprofAvg==Ue)]
+    delta95 = y[np.where(UprofAvg==0.95*Ue)]
+    delta99 = y[np.where(UprofAvg==0.99*Ue)]
+    delta999 = y[np.where(UprofAvg==0.999*Ue)]
     
     print "Ue = " + str(Ue)
     ## delta* (displacement thickness
-    deltas = intsum([(1.0-x/Ue) for x in UprofAvg[0:UeIndex]],[x for x in y[0:UeIndex]])
-    deltas2 = np.trapz([(1.0-x/Ue) for x in UprofAvg[0:UeIndex]],x=[x for x in y[0:UeIndex]])
+    BLindices = np.where(UprofAvg <= Ue)
+    
+    deltas = np.trapz(1.0-UprofAvg[BLindices]/Ue,y[BLindices])
     ## theta  (momentoum thickness
-    theta = intsum([(x/Ue)*(1.0-x/Ue) for x in UprofAvg[0:UeIndex]],[x for x in y[0:UeIndex]])
+    print('delta=' + str(delta))
+
+    theta = np.trapz(UprofAvg[BLindices]/Ue*(1.0-UprofAvg[BLindices]/Ue),y[BLindices])
     ##shape factor
     H = deltas/theta
     
@@ -632,15 +644,15 @@ for dS in SS:
 #    print DT1
 #    print DT2
     if DT1==0:
-        thetaT1prof = [ 0 for x in T1profAvg]
+        thetaT1prof = np.zeros(mm)
         DT1=1e-10
     else:
-        thetaT1prof = [ (x-T1e)/DT1 for x in T1profAvg]
+        thetaT1prof = (T1profAvg-T1e)/DT1
     if DT2==0:
-        thetaT2prof = [ 0 for x in T2profAvg]
+        thetaT2prof = np.zeros(mm)
         DT2=1e-10
     else:
-        thetaT2prof = [(x-T2e)/DT2 for x in T2profAvg]
+        thetaT2prof = (T2profAvg-T2e)/DT2
         
     St1 = alfa * gradT / (Uexit*(T1S-T0))
     St2 = - alfa * gradT2NS / (Uexit*(T2S-T0))
@@ -656,32 +668,25 @@ for dS in SS:
     
     T195Index = [i for i in range(len(thetaT1prof)) if thetaT1prof[i] <= 0.05][0]
     T199Index = [i for i in range(len(thetaT1prof)) if thetaT1prof[i] <= 0.01][0]
-    try:
-        T1999Index = [i for i in range(len(thetaT1prof)) if thetaT1prof[i] <= 0.001][0]
-    except:
-        print('warning: theta2<0.001 not found, assuming max y')
-        T1999Index = T1eIndex-1
+    T1999Index = [i for i in range(len(thetaT1prof)) if thetaT1prof[i] <= 0.005][0]
+    
     
     T295Index = [i for i in range(len(thetaT2prof)) if thetaT2prof[i] <= 0.05][0]
     T299Index = [i for i in range(len(thetaT2prof)) if thetaT2prof[i] <= 0.01][0]
-    try:
-        T2999Index = [i for i in range(len(thetaT2prof)) if thetaT2prof[i] <= 0.001][0]
-    except:
-        print('warning: theta2<0.001 not found, assuming max y')
-        T2999Index = T1eIndex-1
+    T2999Index = [i for i in range(len(thetaT2prof)) if thetaT2prof[i] <= 0.005][0]
     
     
     deltaT1 = y[T1eIndex-1]
-    deltaT195 = y[T195Index]
-    deltaT199 = y[T199Index]
-    deltaT1999 = y[T1999Index]
+    deltaT195 =  y[np.where(thetaT1prof<=0.05)][0]
+    deltaT199 = y[np.where(thetaT1prof<=0.01)][0]
+    deltaT1999 = y[np.where(thetaT1prof<=0.01)][0]
     
     
     
     deltaT2 = y[T2eIndex-1]
-    deltaT295 = y[T295Index]
-    deltaT299 = y[T299Index]
-    deltaT2999 = y[T2999Index]
+    deltaT295 =  y[np.where(thetaT2prof<=0.05)][0]
+    deltaT299 = y[np.where(thetaT2prof<=0.01)][0]
+    deltaT2999 = y[np.where(thetaT2prof<=0.01)][0]
     
     
     deltaT1W = intsum([(x-T1e)/DT1 for x in T1profAvg[0:T1eIndex]],[x for x in y[0:T1eIndex]])
